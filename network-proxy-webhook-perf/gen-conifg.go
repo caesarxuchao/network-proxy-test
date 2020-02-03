@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/caesarxuchao/network-proxy-test/network-proxy-webhook-perf/utils"
 	"github.com/ghodss/yaml"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -14,7 +15,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/util/cert"
 	"k8s.io/client-go/util/keyutil"
-	"k8s.io/kubernetes/test/utils"
 	"k8s.io/utils/pointer"
 )
 
@@ -157,7 +157,7 @@ func createSecretAndDeployment(name string, index int, context *certContext) (*v
 				SuccessThreshold: 1,
 				FailureThreshold: 30,
 			},
-			Image: "gcr.io/kubernetes-e2e-test-images/agnhost:2.8",
+			Image: "gcr.io/chao1-149704/agnhost:2.10",
 			Ports: []v1.ContainerPort{{ContainerPort: containerPort}},
 		},
 	}
