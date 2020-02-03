@@ -157,8 +157,9 @@ func createSecretAndDeployment(name string, index int, context *certContext) (*v
 				SuccessThreshold: 1,
 				FailureThreshold: 30,
 			},
-			Image: "gcr.io/chao1-149704/agnhost:2.10",
-			Ports: []v1.ContainerPort{{ContainerPort: containerPort}},
+			Image:           "gcr.io/chao1-149704/agnhost:2.10",
+			ImagePullPolicy: v1.PullAlways,
+			Ports:           []v1.ContainerPort{{ContainerPort: containerPort}},
 		},
 	}
 	return secret, &appsv1.Deployment{
