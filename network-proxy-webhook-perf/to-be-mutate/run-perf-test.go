@@ -53,6 +53,8 @@ func main() {
 	}
 
 	// create the clientset
+	config.QPS = float32(10000)
+	config.Burst = 10000
 	c, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		panic(err.Error())
