@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/x509"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -270,14 +271,101 @@ func createService(name string, index int) *v1.Service {
 	}
 }
 
+var separateConfigs bool
+
 func main() {
+	flag.BoolVar(&separateConfigs, "separate", false, "if set, generate configuration of different kinds in different files")
+	flag.Parse()
+	if separateConfigs {
+		generateSeperateFiles()
+		return
+	}
+	generateGiantFile()
+}
+
+func generateSeperateFiles() {
+	secrets := v1.SecretList{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "SecretList",
+		},
+	}
+	services := v1.ServiceList{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "ServiceList",
+		},
+	}
+	deployments := appsv1.DeploymentList{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "apps/v1",
+			Kind:       "DeploymentList",
+		},
+	}
+	webhooks := admissionregistrationv1.MutatingWebhookConfigurationList{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "admissionregistration/v1",
+			Kind:       "MutatingWebhookConfigurationList",
+		},
+	}
+	for i := 0; i < 10; i++ {
+		name := fmt.Sprintf("proxy-perf-%d", i)
+		cert := setupServerCert("default", name)
+		secret, deployment := createSecretAndDeployment(name, i, cert)
+		service := createService(name, i)
+		webhook := createWebhookRegistration(name, cert)
+
+		secrets.Items = append(secrets.Items, *secret)
+		deployments.Items = append(deployments.Items, *deployment)
+		services.Items = append(services.Items, *service)
+		webhooks.Items = append(webhooks.Items, *webhook)
+	}
+
+	data, err := yaml.Marshal(secrets)
+	if err != nil {
+		panic(err)
+	}
+	err = ioutil.WriteFile("./secrets.yaml", []byte(data), 0644)
+	if err != nil {
+		panic(err)
+	}
+
+	data, err = yaml.Marshal(services)
+	if err != nil {
+		panic(err)
+	}
+	err = ioutil.WriteFile("./services.yaml", []byte(data), 0644)
+	if err != nil {
+		panic(err)
+	}
+
+	data, err = yaml.Marshal(deployments)
+	if err != nil {
+		panic(err)
+	}
+	err = ioutil.WriteFile("./deployments.yaml", []byte(data), 0644)
+	if err != nil {
+		panic(err)
+	}
+
+	data, err = yaml.Marshal(webhooks)
+	if err != nil {
+		panic(err)
+	}
+	err = ioutil.WriteFile("./webhooks.yaml", []byte(data), 0644)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func generateGiantFile() {
 	var config string
 	for i := 0; i < 10; i++ {
 		name := fmt.Sprintf("proxy-perf-%d", i)
 		cert := setupServerCert("default", name)
 		secret, deployment := createSecretAndDeployment(name, i, cert)
 		service := createService(name, i)
-		webhookReg := createWebhookRegistration(name, cert)
+		webhook := createWebhookRegistration(name, cert)
 		sd, err := yaml.Marshal(secret)
 		if err != nil {
 			panic(err)
@@ -290,7 +378,7 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		wd, err := yaml.Marshal(webhookReg)
+		wd, err := yaml.Marshal(webhook)
 		if err != nil {
 			panic(err)
 		}
