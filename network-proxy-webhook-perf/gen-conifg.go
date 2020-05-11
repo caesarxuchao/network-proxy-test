@@ -94,7 +94,8 @@ func createSecret(name string, context *certContext) *v1.Secret {
 			Kind:       "Secret",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
+			Name:      name,
+			Namespace: namespace,
 		},
 		Type: v1.SecretTypeOpaque,
 		Data: map[string][]byte{
@@ -169,7 +170,8 @@ func createSecretAndDeployment(name string, index int, context *certContext) (*v
 			Kind:       "Deployment",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
+			Name:      name,
+			Namespace: namespace,
 			Labels: map[string]string{
 				"index": fmt.Sprintf("%d", index),
 			},
@@ -217,7 +219,7 @@ func newMutateConfigMapWebhookFixture(name string, context *certContext) admissi
 		}},
 		ClientConfig: admissionregistrationv1.WebhookClientConfig{
 			Service: &admissionregistrationv1.ServiceReference{
-				Namespace: "default",
+				Namespace: namespace,
 				Name:      name,
 				Path:      strPtr("/mutating-configmaps"),
 				Port:      pointer.Int32Ptr(servicePort),
@@ -251,7 +253,8 @@ func createService(name string, index int) *v1.Service {
 			Kind:       "Service",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
+			Name:      name,
+			Namespace: namespace,
 			Labels: map[string]string{
 				"index": fmt.Sprintf("%d", index),
 			},
@@ -271,10 +274,14 @@ func createService(name string, index int) *v1.Service {
 	}
 }
 
-var separateConfigs bool
+var (
+	separateConfigs bool
+	namespace       string
+)
 
 func main() {
 	flag.BoolVar(&separateConfigs, "separate", false, "if set, generate configuration of different kinds in different files")
+	flag.StringVar(&namespace, "namespace", "default", "the namespace of the namespaced objects")
 	flag.Parse()
 	if separateConfigs {
 		generateSeperateFiles()
